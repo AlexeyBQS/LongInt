@@ -14,8 +14,8 @@ namespace TestLongInt
         [Test]
         public void TestSbyteInit()
         {
-            Assert.AreEqual("1234", new longint(false, new sbyte[] { 1, 2, 3, 4 }).ToString());
-            Assert.AreEqual("-1234", new longint(true, new sbyte[] { 1, 2, 3, 4 }).ToString());
+            Assert.AreEqual("1234", new longint(false, new sbyte[] { 4, 3, 2, 1 }).ToString());
+            Assert.AreEqual("-1234", new longint(true, new sbyte[] { 4, 3, 2, 1 }).ToString());
         }
 
         [Test]

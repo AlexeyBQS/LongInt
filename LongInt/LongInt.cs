@@ -12,52 +12,52 @@ namespace LongInt
     {
         private const int MAX_LENGTH_ARRAY = 2147483591; // int.MaxValue - 56
 
-        private bool negative;
+        private bool _negative;
         public bool Negative
         {
             get
             {
-                if (value == null) { negative = false; }
-                else if (value.Length == 0) { negative = false; }
-                else if (value.Length == 1) { if (value[0] == 0) { negative = false; } }
+                if (_value == null) { _negative = false; }
+                else if (_value.Length == 0) { _negative = false; }
+                else if (_value.Length == 1) { if (_value[0] == 0) { _negative = false; } }
 
-                return negative;
+                return _negative;
             }
             set
             {
-                negative = value;
+                _negative = value;
 
-                if (this.value == null) { negative = false; }
-                else if (this.value.Length == 0) { negative = false; }
-                else if (this.value.Length == 1) { if (this.value[0] == 0) { negative = false; } }
+                if (this._value == null) { _negative = false; }
+                else if (this._value.Length == 0) { _negative = false; }
+                else if (this._value.Length == 1) { if (this._value[0] == 0) { _negative = false; } }
             }
         }
 
-        private sbyte[] value;
+        private sbyte[] _value;
         public sbyte[] Value
         {
             get
             {
-                if (value == null)
-                    value = new sbyte[1];
-                else if (value.Length == 0)
-                    value = new sbyte[1];
+                if (_value == null)
+                    _value = new sbyte[1];
+                else if (_value.Length == 0)
+                    _value = new sbyte[1];
 
-                return value;
+                return _value;
             }
             set
             {
                 if (value != null)
                 {
                     if (value.Length != 0)
-                        this.value = value;
+                        this._value = value;
                     else
-                        this.value = new sbyte[1];
+                        this._value = new sbyte[1];
                 }
                 else
-                    this.value = new sbyte[1] { 0 };
+                    this._value = new sbyte[1] { 0 };
 
-                this.value = CorrectValue(this.value);
+                this._value = CorrectValue(this._value);
             }
         } // 127..-128 - 1 byte
 
@@ -67,8 +67,6 @@ namespace LongInt
         }
         public longint(bool negative, sbyte[] value)
         {
-            Array.Reverse(value);
-
             Value = value;
             Negative = negative;
         }
@@ -91,6 +89,11 @@ namespace LongInt
 
             Value = dataValue.ToArray();
             Negative = negative;
+        }
+
+        public static implicit operator longint(int value)
+        {
+            return new longint(value);
         }
 
         public override bool Equals(object obj)
@@ -191,6 +194,10 @@ namespace LongInt
 
             return value;
         }
+        private static longint Abs(longint li)
+        {
+            return new longint(false, li.Value);
+        }
 
         public static bool operator ==(longint li1, longint li2)
         {
@@ -287,9 +294,67 @@ namespace LongInt
             return li1 > li2 || li1 == li2;
         }
 
-        public static implicit operator longint(int value)
+        public static longint operator +(longint li1, longint li2)
         {
-            return new longint(value);
+            CheckValueForNull(li1); CheckValueForNull(li2);
+            int count = li1 >= li2 ? li1.Value.Length : li2.Value.Length;
+            sbyte[] newValue = new sbyte[count];
+
+            if (!li1.Negative && !li2.Negative)
+            {
+                for (int i = 0; i < count; ++i)
+                {
+                    if (i < li1.Value.Length && i < li2.Value.Length)
+                        newValue[i] = (sbyte)(li1.Value[i] + li2.Value[i]);
+                    else if (i < li1.Value.Length)
+                        newValue[i] = li1.Value[i];
+                    else if (i < li2.Value.Length)
+                        newValue[i] = li2.Value[i];
+                }
+            }
+            else if (li1.Negative && li2.Negative)
+                return li1 - longint.Abs(li2);
+            else if (!li1.Negative && li2.Negative)
+                return li1 - longint.Abs(li2);
+            else if (li1.Negative && !li2.Negative)
+                return li2 - longint.Abs(li1);
+
+            return new longint(false, newValue);
+        }
+        public static longint operator -(longint li1,longint li2)
+        {
+            CheckValueForNull(li1); CheckValueForNull(li2);
+            int count = longint.Abs(li1) >= longint.Abs(li2) ?
+                        li1.Value.Length : li2.Value.Length;
+
+            sbyte[] newValue = new sbyte[count];
+            bool negative = false;
+
+            if (!li1.Negative && !li2.Negative)
+            {
+                if (li1 >= li2)
+                {
+                    for (int i = 0; i < count; ++i)
+                    {
+                        if (i < li1.Value.Length && i < li2.Value.Length)
+                            newValue[i] = (sbyte)(li1.Value[i] - li2.Value[i]);
+                        else if (i < li1.Value.Length)
+                            newValue[i] = li1.Value[i];
+                        else if (i < li2.Value.Length)
+                            newValue[i] = li2.Value[i];
+                    }
+                }
+                else
+                    return new longint(true, (li2 - li1).Value);
+            }
+            else if (li1.Negative && !li2.Negative)
+                return new longint(true, (longint.Abs(li1) + li2).Value);
+            else if (!li1.Negative && li2.Negative)
+                return li1 + longint.Abs(li2);
+            else if (li1.Negative && li2.Negative)
+                return li1 + longint.Abs(li2);
+
+            return new longint(negative, newValue);
         }
     }
 }
