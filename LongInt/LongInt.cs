@@ -294,6 +294,15 @@ namespace LongInt
             return li1 > li2 || li1 == li2;
         }
 
+        public static longint operator +(longint li)
+        {
+            CheckValueForNull(li);
+            return new longint(li.Negative, li.Value);
+        }
+        public static longint operator ++(longint li)
+        {
+            return li + 1;
+        }
         public static longint operator +(longint li1, longint li2)
         {
             CheckValueForNull(li1); CheckValueForNull(li2);
@@ -321,7 +330,16 @@ namespace LongInt
 
             return new longint(false, newValue);
         }
-        public static longint operator -(longint li1,longint li2)
+        public static longint operator -(longint li)
+        {
+            CheckValueForNull(li);
+            return new longint(!li.Negative, li.Value);
+        }
+        public static longint operator --(longint li)
+        {
+            return li - 1;
+        }
+        public static longint operator -(longint li1, longint li2)
         {
             CheckValueForNull(li1); CheckValueForNull(li2);
             int count = longint.Abs(li1) >= longint.Abs(li2) ?
@@ -355,6 +373,104 @@ namespace LongInt
                 return li1 + longint.Abs(li2);
 
             return new longint(negative, newValue);
+        }
+        public static longint operator *(longint li1, longint li2)
+        {
+            CheckValueForNull(li1); CheckValueForNull(li2);
+            if (longint.Abs(li1) < longint.Abs(li2)) return li2 * li1;
+
+            bool negative = li1.Negative || li2.Negative;
+            sbyte[] newValue = new sbyte[0];
+
+            sbyte[][] _sumValues = new sbyte[li2.Value.Length][];
+            int rank = 0;
+
+            while (rank < li2.Value.Length)
+            {
+                _sumValues[rank] = new sbyte[li1.Value.Length + rank];
+                int multiply = li2.Value[rank];
+
+                for (int i = 0; i < li1.Value.Length; ++i)
+                    _sumValues[rank][rank + i] = (sbyte)(li1.Value[i] * multiply);
+
+                _sumValues[rank] = CorrectValue(_sumValues[rank]);
+
+                ++rank;
+            }
+
+            foreach (sbyte[] sumValue in _sumValues)
+                newValue = (new longint(false, newValue) + new longint(false, sumValue)).Value;
+
+            return new longint(negative, newValue); 
+        }
+        public static longint operator /(longint li1, longint li2)
+        {
+            CheckValueForNull(li1); CheckValueForNull(li2);
+            if (li2 == 0)
+                throw new DivideByZeroException("Attempted to divide by zero.");
+
+            bool negative = li1.Negative || li2.Negative;
+            longint result = 0;
+
+            li1 = longint.Abs(li1);
+            li2 = longint.Abs(li2);
+
+            if (li1 < li2) { result = 0; }
+            else if (li1 == li2) { result++; }
+            else
+            {
+                longint myltiplySubstract, substract, myltiply, divider;
+                int tempResult, substractLength;
+                sbyte[] myltiplyValue;
+
+                while (li1 > li2)
+                {
+                    substractLength = li2.Value.Length >= 2 ? li2.Value.Length : 2;
+                    tempResult = 0; myltiply = 1; divider = 0;
+                    substract = 0; myltiplySubstract = 1;
+
+                    do
+                    {
+                        if (substract != 0 && substract < li2)
+                        {
+                            substract = 0; myltiplySubstract = 1;
+                            substractLength++;
+                        }
+
+                        for (int i = substractLength; i > 0; --i)
+                        {
+                            substract += li1.Value[li1.Value.Length - i] * myltiplySubstract;
+                            myltiplySubstract *= 10;
+                        }
+                    }
+                    while (substract < li2);
+
+                    while (substract >= divider + li2)
+                    {
+                        divider += li2;
+                        tempResult++;
+                    }
+
+                    myltiplyValue = new sbyte[li1.Value.Length - (substractLength - 1)];
+                    myltiplyValue[myltiplyValue.Length - 1] = 1;
+
+                    myltiply = new longint(false, myltiplyValue);
+
+                    li1 -= divider * myltiply;
+                    result += tempResult * myltiply;
+                }
+
+                if (li1 == li2) result++;
+            }
+
+            result.Negative = negative;
+            return result;
+        }
+        public static longint operator %(longint li1, longint li2)
+        {
+            CheckValueForNull(li1); CheckValueForNull(li2);
+            longint result = li1 - (li2 * (li1 / li2));
+            return result >= 0 ? result : 0;
         }
     }
 }
